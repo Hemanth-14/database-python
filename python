@@ -1,0 +1,69 @@
+import mysql.connector
+from mysql.connector import Error
+
+try:
+    # establish database connection
+    connection = mysql.connector.connect(
+        host='hostname',
+        user='username',
+        password='password',
+        database='database_name'
+    )
+    if connection.is_connected():
+        print("Connected to database")
+
+    # delete record if 'delete' button was clicked
+    if 'delete' in request.form:
+        ID = request.form['ID']
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM employees WHERE ID = %s", (ID,))
+        connection.commit()
+        cursor.close()
+        return redirect(url_for('displaying'))
+
+    # update record if 'edit' button was clicked
+    if 'edit' in request.form:
+        ID = request.form['ID']
+        first_name = request.form['first_name']
+        last_name = request.form['last_name']
+        designation = request.form['designation']
+        cursor = connection.cursor()
+        cursor.execute("UPDATE employees SET first_name=%s, last_name=%s, designation=%s WHERE ID=%s", (first_name, last_name, designation, ID))
+        connection.commit()
+        cursor.close()
+        return redirect(url_for('displaying'))
+
+    # display records in a table
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM employees")
+    records = cursor.fetchall()
+    if len(records) > 0:
+        print("<div class='table-box'>")
+        print("<table>")
+        print("<tr><th>ID</th><th>First Name</th><th>Last Name</th><th>Designation</th><th>To Edit</th><th>To Delete</th></tr>")
+        for row in records:
+            print("<tr>")
+            print("<form method='post'>")
+            print("<input type='hidden' name='ID' value='" + str(row[0]) + "'>")
+            print("<td>" + str(row[0]) + "</td>")
+            print("<td><input type='text' name='first_name' value='" + row[1] + "'></td>")
+            print("<td><input type='text' name='last_name' value='" + row[2] + "'></td>")
+            print("<td><input type='text' name='designation' value='" + row[3] + "'></td>")
+            print("<td><input type='submit' name='edit' value='Edit'></td>")
+            print("<td><input type='submit' name='delete' value='Delete'></td>")
+            print("</form>")
+            print("</tr>")
+        print("</table>")
+        print("</div>")
+    else:
+        print("0 results")
+
+except Error as e:
+    print("Error while connecting to MySQL", e)
+
+finally:
+    # close database connection
+    if (connection.is_connected()):
+        cursor.close()
+        connection.close()
+        print("MySQL connection is closed")
